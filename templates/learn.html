@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container lab-container">
+    <!-- Header -->
+    <div class="lab-header">
+        <div class="lab-title-group">
+            <div class="lab-icon-badge icon-amber">
+                <i data-feather="book-open"></i>
+            </div>
+            <div>
+                <span class="chip-badge chip-amber">Laboratory 4</span>
+                <h1 class="lab-main-heading">Learn Digital Electronics</h1>
+                <p class="lab-sub-heading">Structured theoretical modules, solved numerical problems, boolean algebra theorems, circuit breakdowns, and interactive certification assessments.</p>
+            </div>
+        </div>
+        <div class="lab-header-actions">
+            <a href="#final-exam" class="btn btn-primary btn-sm">
+                <i data-feather="award"></i> Take Final Exam
+            </a>
+            <button class="btn btn-secondary btn-sm" id="btn-open-glossary">
+                <i data-feather="help-circle"></i> Glossary
+            </button>
+        </div>
+    </div>
+
+    <!-- Learning Dashboard & Progress Bar -->
+    <div class="learning-tracker-card">
+        <div class="tracker-header">
+            <div class="tracker-info">
+                <span class="tracker-title">Course Curriculum Progress:</span>
+                <span class="tracker-stat"><strong id="completed-topics-count">0</strong> of {{ modules|length }} Modules Mastered</span>
+            </div>
+            <button class="btn btn-outline btn-sm" id="btn-reset-progress">
+                <i data-feather="refresh-cw"></i> Reset Progress
+            </button>
+        </div>
+        <div class="progress-bar-track">
+            <div class="progress-bar-fill" id="curriculum-progress-bar" style="width: 0%;"></div>
+        </div>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="learn-filter-bar">
+        <div class="search-box-wrap">
+            <i data-feather="search" class="search-box-icon"></i>
+            <input type="text" id="learn-topic-search" class="lab-text-input" placeholder="Search lessons (e.g. 'De Morgan', 'Full Adder', 'Hex', 'Flip-Flop')...">
+        </div>
+        <div class="category-pills" id="category-filter-pills">
+            <button class="filter-pill active" data-category="ALL">All Topics</button>
+            <button class="filter-pill" data-category="Fundamentals">Fundamentals</button>
+            <button class="filter-pill" data-category="Number Systems">Number Systems</button>
+            <button class="filter-pill" data-category="Boolean Logic">Boolean Logic</button>
+            <button class="filter-pill" data-category="Logic Gates">Logic Gates</button>
+            <button class="filter-pill" data-category="Arithmetic Circuits">Arithmetic</button>
+            <button class="filter-pill" data-category="Advanced Circuits">Sequential & MUX</button>
+        </div>
+    </div>
+
+    <!-- Interactive Topic Modules List -->
+    <div class="modules-accordion-list" id="modules-list-container">
+        {% for mod in modules %}
+        <div class="theory-card" id="module-{{ mod.id }}" data-category="{{ mod.category }}" data-title="{{ mod.title|lower }}" data-summary="{{ mod.summary|lower }}">
+            <div class="theory-card-header" data-toggle-target="body-{{ mod.id }}">
+                <div class="header-left">
+                    <input type="checkbox" class="topic-checkbox" id="check-{{ mod.id }}" data-module-id="{{ mod.id }}" title="Mark as Completed">
+                    <div class="card-icon-pill">
+                        <i data-feather="{{ mod.icon }}"></i>
+                    </div>
+                    <div>
+                        <div class="category-meta-tag">{{ mod.category }}</div>
+                        <h3 class="theory-card-title">{{ mod.title }}</h3>
+                        <p class="theory-card-summary">{{ mod.summary }}</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <span class="chevron-indicator"><i data-feather="chevron-down"></i></span>
+                </div>
+            </div>
+
+            <!-- Expandable Card Body -->
+            <div class="theory-card-body" id="body-{{ mod.id }}">
+                <div class="theory-content-inner">
+                    {{ mod.content_html | safe }}
+
+                    <!-- Solved Numerical Problems if present -->
+                    {% if mod.solved_examples %}
+                    <div class="solved-examples-box mt-3">
+                        <h5 class="solved-box-heading"><i data-feather="edit-3"></i> Solved Numerical Exercises</h5>
+                        {% for ex in mod.solved_examples %}
+                        <div class="example-item">
+                            <div class="example-problem"><strong>Problem:</strong> {{ ex.problem }}</div>
+                            <button class="btn btn-outline btn-xs mt-2 btn-toggle-solution" data-sol-id="sol-{{ loop.index }}-{{ mod.id }}">Show Solution</button>
+                            <div class="example-solution" id="sol-{{ loop.index }}-{{ mod.id }}" style="display: none;">
+                                <strong>Step-by-Step Solution:</strong><br>
+                                {{ ex.solution | replace('\\n', '<br>') | safe }}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Key Takeaways -->
+                    {% if mod.key_takeaways %}
+                    <div class="takeaways-box mt-3">
+                        <span class="takeaways-title"><i data-feather="check-square"></i> Key Engineering Takeaways:</span>
+                        <ul>
+                            {% for point in mod.key_takeaways %}
+                            <li>{{ point }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <!-- Topic Quick Check MCQ Quiz -->
+                    {% if mod.quiz %}
+                    <div class="topic-quiz-card mt-3" data-correct-idx="{{ mod.quiz.correct }}" data-quiz-id="{{ mod.id }}">
+                        <div class="topic-quiz-header">
+                            <i data-feather="help-circle"></i>
+                            <span>Quick Concept Check</span>
+                        </div>
+                        <p class="quiz-question-text">{{ mod.quiz.question }}</p>
+                        <div class="quiz-options-group">
+                            {% for opt in mod.quiz.options %}
+                            <button class="quiz-opt-btn" data-opt-idx="{{ loop.index0 }}">{{ opt }}</button>
+                            {% endfor %}
+                        </div>
+                        <div class="quiz-feedback-box" style="display: none;">
+                            <span class="feedback-status"></span>
+                            <p class="feedback-text">{{ mod.quiz.explanation }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Final Comprehensive Certification Exam Section -->
+    <section class="final-exam-section" id="final-exam">
+        <div class="panel-card exam-card">
+            <div class="panel-header">
+                <div>
+                    <span class="chip-badge chip-emerald">College DELD Final Assessment</span>
+                    <h2 class="panel-title-lg">Digital Electronics Certification Quiz</h2>
+                </div>
+                <div class="exam-status-badge">
+                    <span>10 Comprehensive Questions</span>
+                </div>
+            </div>
+            <p class="panel-intro-text">
+                Test your mastery across number conversions, logic gates, Boolean identities, and arithmetic circuits.
+                Achieve 70% or higher to earn the <strong>LogicLab X Digital Logic Scholar Certificate</strong>!
+            </p>
+
+            <div class="exam-container" id="exam-questions-container">
+                <!-- Injected by learning.js -->
+            </div>
+
+            <!-- Exam Controls -->
+            <div class="exam-action-bar" id="exam-actions">
+                <button class="btn btn-primary btn-lg" id="btn-submit-exam">
+                    <i data-feather="check-circle"></i> Submit Examination
+                </button>
+                <button class="btn btn-secondary btn-lg" id="btn-retake-exam" style="display: none;">
+                    <i data-feather="rotate-ccw"></i> Retake Exam
+                </button>
+            </div>
+
+            <!-- Final Score Summary & Certificate Card (Hidden until submitted) -->
+            <div class="certificate-badge-card" id="certificate-card" style="display: none;">
+                <div class="cert-ribbon"><i data-feather="award"></i> Certified</div>
+                <h3 class="cert-title">Academic Achievement Award</h3>
+                <p class="cert-subtitle">Presented for demonstrating proficiency in Digital Electronics & Logic Design</p>
+                <div class="cert-score-display">
+                    Final Score: <span class="cert-score-number" id="cert-score-val">0</span> / 10 (<span id="cert-percentage-val">0%</span>)
+                </div>
+                <div class="cert-verdict" id="cert-verdict-msg">Outstanding Performance!</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Digital Electronics Glossary Modal -->
+    <div class="modal-overlay" id="glossary-modal" aria-hidden="true" role="dialog">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-heading"><i data-feather="book"></i> Digital Electronics Glossary</h3>
+                <button class="modal-close-icon" id="glossary-modal-close" aria-label="Close glossary">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="glossary-search-wrap mb-3">
+                    <input type="text" id="glossary-search-input" class="lab-text-input" placeholder="Search glossary terms...">
+                </div>
+                <div class="glossary-list" id="glossary-items-list">
+                    {% for item in glossary %}
+                    <div class="glossary-item" data-term="{{ item.term|lower }}" data-def="{{ item.def|lower }}">
+                        <strong class="glossary-term">{{ item.term }}</strong>
+                        <p class="glossary-def">{{ item.def }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="btn-close-glossary-modal">Done</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/learning.js') }}"></script>
+{% endblock %}

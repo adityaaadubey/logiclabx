@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title | default("LogicLab X — Digital Electronics Playground") }}</title>
+    <meta name="description" content="LogicLab X: Interactive Digital Electronics Simulator for Number System Conversions, 7 Logic Gates, Half/Full Adders & Subtractors, and Complete Theory Learning Hub.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Fallback Feather Icons via CDN with graceful local styling -->
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body class="lab-body">
+    <!-- Ambient glowing circuit background grid -->
+    <div class="circuit-grid-bg" aria-hidden="true"></div>
+    <div class="ambient-glow glow-1" aria-hidden="true"></div>
+    <div class="ambient-glow glow-2" aria-hidden="true"></div>
+
+    <!-- Navigation Header -->
+    <header class="navbar-wrapper">
+        <nav class="navbar container">
+            <a href="{{ url_for('index') }}" class="brand-link" id="nav-brand">
+                <div class="brand-chip-icon">
+                    <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="4" y="4" width="16" height="16" rx="2"/>
+                        <rect x="9" y="9" width="6" height="6"/>
+                        <line x1="9" y1="1" x2="9" y2="4"/>
+                        <line x1="15" y1="1" x2="15" y2="4"/>
+                        <line x1="9" y1="20" x2="9" y2="23"/>
+                        <line x1="15" y1="20" x2="15" y2="23"/>
+                        <line x1="20" y1="9" x2="23" y2="9"/>
+                        <line x1="20" y1="14" x2="23" y2="14"/>
+                        <line x1="1" y1="9" x2="4" y2="9"/>
+                        <line x1="1" y1="14" x2="4" y2="14"/>
+                    </svg>
+                </div>
+                <div class="brand-text-wrap">
+                    <span class="brand-title">LogicLab <span class="neon-x">X</span></span>
+                    <span class="brand-subtitle">Digital Electronics Playground</span>
+                </div>
+            </a>
+
+            <!-- Desktop Nav Links -->
+            <ul class="nav-links" id="desktop-nav">
+                <li>
+                    <a href="{{ url_for('index') }}" class="nav-item {% if active_page == 'home' %}active{% endif %}" id="nav-home">
+                        <i data-feather="home" class="nav-icon"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('number_converter') }}" class="nav-item {% if active_page == 'converter' %}active{% endif %}" id="nav-converter">
+                        <i data-feather="hash" class="nav-icon"></i>
+                        <span>Number Systems</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('logic_gates') }}" class="nav-item {% if active_page == 'gates' %}active{% endif %}" id="nav-gates">
+                        <i data-feather="zap" class="nav-icon"></i>
+                        <span>Logic Gates</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('arithmetic_circuits') }}" class="nav-item {% if active_page == 'arithmetic' %}active{% endif %}" id="nav-arithmetic">
+                        <i data-feather="layers" class="nav-icon"></i>
+                        <span>Arithmetic Circuits</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('learn') }}" class="nav-item {% if active_page == 'learn' %}active{% endif %}" id="nav-learn">
+                        <i data-feather="book-open" class="nav-icon"></i>
+                        <span>Learn & Quiz</span>
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Header Action Controls -->
+            <div class="nav-actions">
+                <button class="icon-btn search-trigger" id="search-modal-btn" title="Quick Search (Ctrl + K)" aria-label="Search topics and circuits">
+                    <i data-feather="search"></i>
+                    <span class="search-key-badge">Ctrl K</span>
+                </button>
+                <button class="icon-btn theme-toggle" id="theme-toggle-btn" title="Toggle Dark / Light Theme" aria-label="Toggle theme">
+                    <i data-feather="moon" id="theme-icon-moon"></i>
+                    <i data-feather="sun" id="theme-icon-sun" style="display:none;"></i>
+                </button>
+                <button class="mobile-toggle-btn" id="mobile-menu-toggle" aria-label="Toggle mobile menu" aria-expanded="false">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Mobile Drawer Navigation -->
+    <div class="mobile-drawer" id="mobile-drawer">
+        <div class="drawer-header">
+            <span class="drawer-title">Navigation</span>
+            <button class="drawer-close-btn" id="drawer-close-btn" aria-label="Close menu">&times;</button>
+        </div>
+        <ul class="mobile-nav-list">
+            <li><a href="{{ url_for('index') }}" class="mobile-nav-link {% if active_page == 'home' %}active{% endif %}"><i data-feather="home"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('number_converter') }}" class="mobile-nav-link {% if active_page == 'converter' %}active{% endif %}"><i data-feather="hash"></i> Number System Converter</a></li>
+            <li><a href="{{ url_for('logic_gates') }}" class="mobile-nav-link {% if active_page == 'gates' %}active{% endif %}"><i data-feather="zap"></i> Logic Gate Simulator</a></li>
+            <li><a href="{{ url_for('arithmetic_circuits') }}" class="mobile-nav-link {% if active_page == 'arithmetic' %}active{% endif %}"><i data-feather="layers"></i> Arithmetic Circuits</a></li>
+            <li><a href="{{ url_for('learn') }}" class="mobile-nav-link {% if active_page == 'learn' %}active{% endif %}"><i data-feather="book-open"></i> Learn & Quizzes</a></li>
+        </ul>
+        <div class="drawer-footer">
+            <button class="btn btn-secondary btn-sm" id="mobile-glossary-btn"><i data-feather="help-circle"></i> Glossary</button>
+            <button class="btn btn-secondary btn-sm" id="mobile-info-btn"><i data-feather="info"></i> Project Info</button>
+        </div>
+    </div>
+    <div class="drawer-backdrop" id="drawer-backdrop"></div>
+
+    <!-- Main Content Injection -->
+    <main class="main-content" id="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Global Quick Search Modal -->
+    <div class="modal-overlay" id="search-modal" aria-hidden="true" role="dialog">
+        <div class="modal-card search-card">
+            <div class="search-input-header">
+                <i data-feather="search" class="search-icon"></i>
+                <input type="text" id="global-search-input" class="global-search-field" placeholder="Search topics, gates, conversions, or glossary terms..." autocomplete="off">
+                <button class="modal-close-icon" id="search-modal-close" aria-label="Close search">&times;</button>
+            </div>
+            <div class="search-results-list" id="search-results-box">
+                <div class="search-tip-empty">Type keywords like "NAND", "Full Adder", "Hex to Binary", "De Morgan", or "Flip-Flop"...</div>
+            </div>
+            <div class="search-modal-footer">
+                <span>Navigate: <kbd>↑</kbd> <kbd>↓</kbd></span>
+                <span>Select: <kbd>Enter</kbd></span>
+                <span>Close: <kbd>Esc</kbd></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Project Info & Presentation Modal -->
+    <div class="modal-overlay" id="info-modal" aria-hidden="true" role="dialog">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="chip-badge chip-cyan">Academic Mini Project</span>
+                    <h3 class="modal-heading">LogicLab X: Digital Electronics Playground</h3>
+                </div>
+                <button class="modal-close-icon" id="info-modal-close" aria-label="Close info">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Tagline:</strong> <em>Understand the Logic. See the Signals. Master Digital Electronics.</em></p>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Domain:</span>
+                        <span class="info-val">Digital Electronics & Logic Design (DELD)</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Stack:</span>
+                        <span class="info-val">Python Flask, JavaScript ES6, HTML5, SVG Canvas, Vanilla CSS3</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Pages:</span>
+                        <span class="info-val">4 Core Interactive Labs + Dashboard & Comprehensive Exam</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Testing:</span>
+                        <span class="info-val">Automated Pytest Suite for all 12 Base conversions & Circuits</span>
+                    </div>
+                </div>
+                <div class="modal-notes mt-3">
+                    <p class="small text-muted">Crafted as an educational simulation laboratory for university and high school students to explore boolean expressions, number representations, signal traces, and combinatorial arithmetic without any physical hardware requirements.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="info-modal-ack-btn">Close Window</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Toast Notification System -->
+    <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+    <!-- Footer -->
+    <footer class="lab-footer">
+        <div class="container footer-content">
+            <div class="footer-brand-section">
+                <div class="brand-title footer-logo">LogicLab <span class="neon-x">X</span></div>
+                <p class="footer-tagline">Understand the Logic. See the Signals. Master Digital Electronics.</p>
+                <div class="footer-status-pill">
+                    <span class="status-dot"></span>
+                    <span>Simulation Engine Active</span>
+                </div>
+            </div>
+
+            <div class="footer-nav-col">
+                <span class="footer-col-title">Main Labs</span>
+                <a href="{{ url_for('number_converter') }}">Number Converter</a>
+                <a href="{{ url_for('logic_gates') }}">Logic Gates Lab</a>
+                <a href="{{ url_for('arithmetic_circuits') }}">Arithmetic Circuits</a>
+                <a href="{{ url_for('learn') }}">Learning Hub</a>
+            </div>
+
+            <div class="footer-nav-col">
+                <span class="footer-col-title">Resources</span>
+                <a href="javascript:void(0)" id="footer-glossary-link">Electronics Glossary</a>
+                <a href="javascript:void(0)" id="footer-info-link">Project Specifications</a>
+                <a href="{{ url_for('learn') }}#final-exam">Certification Exam</a>
+            </div>
+
+            <div class="footer-nav-col">
+                <span class="footer-col-title">Preferences</span>
+                <div class="footer-toggle-row">
+                    <label for="reduced-motion-checkbox" class="toggle-label-sm">Reduced Motion:</label>
+                    <input type="checkbox" id="reduced-motion-checkbox">
+                </div>
+                <div class="footer-toggle-row mt-2">
+                    <span class="text-muted small">Local Storage: Cached</span>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom container">
+            <p>&copy; 2026 LogicLab X — Built with Python Flask & Modern Web Standards. Designed for University DELD Curriculums.</p>
+        </div>
+    </footer>
+
+    <!-- Global Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container lab-container">
+    <!-- Header -->
+    <div class="lab-header">
+        <div class="lab-title-group">
+            <div class="lab-icon-badge icon-emerald">
+                <i data-feather="layers"></i>
+            </div>
+            <div>
+                <span class="chip-badge chip-emerald">Laboratory 3</span>
+                <h1 class="lab-main-heading">Digital Arithmetic Circuit Laboratory</h1>
+                <p class="lab-sub-heading">Simulate Half Adders, Full Adders, Half Subtractors, and Full Subtractors. Inspect intermediate gate signals, carry cascades, and borrow propagation in real-time.</p>
+            </div>
+        </div>
+        <div class="lab-header-actions">
+            <button class="btn btn-secondary btn-sm" id="btn-toggle-step-inspect">
+                <i data-feather="eye"></i> Step-by-Step Signals
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btn-toggle-arith-compare">
+                <i data-feather="columns"></i> Compare 4 Circuits
+            </button>
+            <a href="{{ url_for('api_truth_table_csv') }}?type=arithmetic&name=HALF_ADDER" class="btn btn-outline btn-sm" id="btn-export-arith-csv" title="Download Truth Table as CSV">
+                <i data-feather="download"></i> Export CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Circuit Selector Strip -->
+    <div class="gate-selector-strip" role="tablist">
+        <button type="button" class="gate-tab-btn active" data-circuit="HALF_ADDER" role="tab">
+            <span class="gate-tab-name">Half Adder</span>
+            <span class="gate-tab-symbol">A + B</span>
+        </button>
+        <button type="button" class="gate-tab-btn" data-circuit="FULL_ADDER" role="tab">
+            <span class="gate-tab-name">Full Adder</span>
+            <span class="gate-tab-symbol">A + B + Cin</span>
+        </button>
+        <button type="button" class="gate-tab-btn" data-circuit="HALF_SUBTRACTOR" role="tab">
+            <span class="gate-tab-name">Half Subtractor</span>
+            <span class="gate-tab-symbol">A - B</span>
+        </button>
+        <button type="button" class="gate-tab-btn" data-circuit="FULL_SUBTRACTOR" role="tab">
+            <span class="gate-tab-name">Full Subtractor</span>
+            <span class="gate-tab-symbol">A - B - Bin</span>
+        </button>
+    </div>
+
+    <!-- Intermediate Step-by-Step Signal Inspector Banner (Toggleable) -->
+    <div class="step-inspect-banner" id="step-inspect-banner" style="display: none;">
+        <div class="step-inspect-header">
+            <div class="step-inspect-title">
+                <i data-feather="cpu" class="text-info"></i>
+                <span>Internal Signal Propagation Stage Inspection</span>
+            </div>
+            <span class="badge badge-cyan" id="inspect-stage-badge">Stage 2 of 2</span>
+        </div>
+        <p class="step-inspect-desc" id="step-inspect-desc">
+            Signals propagate through semiconductor gates with a slight propagation delay ($t_{pd}$). Notice how intermediate stage 1 generates sub-sum/borrow before stage 2 completes the final carry/borrow out.
+        </p>
+        <div class="node-signals-row" id="node-signals-dock">
+            <!-- Dynamically populated badges for intermediate wire values -->
+        </div>
+    </div>
+
+    <!-- Main Arithmetic Workbench -->
+    <div class="workbench-grid" id="arithmetic-single-workbench">
+        <!-- Left: Interactive Schematic Diagram & Controls -->
+        <div class="panel-card schematic-panel">
+            <div class="panel-header">
+                <div>
+                    <span class="badge badge-emerald" id="arith-circuit-badge">1-Bit Binary Arithmetic</span>
+                    <h3 class="panel-title" id="arith-circuit-title">Half Adder</h3>
+                </div>
+                <div class="schematic-actions">
+                    <button class="btn btn-secondary btn-sm" id="btn-random-arith-inputs" title="Generate Random Inputs">
+                        <i data-feather="shuffle"></i> Randomize
+                    </button>
+                    <button class="btn btn-secondary btn-sm" id="btn-reset-arith" title="Reset Inputs to 0">
+                        <i data-feather="rotate-ccw"></i> Reset
+                    </button>
+                </div>
+            </div>
+
+            <!-- Formulas Header -->
+            <div class="circuit-formula-banner" id="circuit-formula-banner">
+                <div class="formula-item">
+                    <span class="formula-tag">Output 1:</span>
+                    <span class="formula-val mono-font" id="formula-out-1">Sum: S = A ⊕ B</span>
+                </div>
+                <div class="formula-item">
+                    <span class="formula-tag">Output 2:</span>
+                    <span class="formula-val mono-font" id="formula-out-2">Carry: C = A · B</span>
+                </div>
+            </div>
+
+            <!-- SVG Schematic Canvas for Arithmetic Circuits -->
+            <div class="circuit-schematic-stage" id="arith-circuit-stage">
+                <svg id="arith-svg-canvas" viewBox="0 0 680 320" class="gate-svg">
+                    <defs>
+                        <filter id="wire-glow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feGaussianBlur stdDeviation="3" result="blur"/>
+                            <feMerge>
+                                <feMergeNode in="blur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+
+                    <!-- Background grid -->
+                    <g class="schematic-grid" opacity="0.12">
+                        <line x1="0" y1="80" x2="680" y2="80" stroke="var(--border-color)" stroke-width="1"/>
+                        <line x1="0" y1="160" x2="680" y2="160" stroke="var(--border-color)" stroke-width="1"/>
+                        <line x1="0" y1="240" x2="680" y2="240" stroke="var(--border-color)" stroke-width="1"/>
+                    </g>
+
+                    <!-- Dynamically drawn circuit elements (gates, wires, junctions, badges) -->
+                    <g id="arith-svg-dynamic-elements">
+                        <!-- Populated by circuits.js -->
+                    </g>
+                </svg>
+            </div>
+
+            <!-- Interactive Switches Bar -->
+            <div class="switches-control-dock">
+                <div class="switch-control-item">
+                    <span class="switch-dock-label">Input A</span>
+                    <button type="button" class="binary-switch off" id="arith-switch-a" data-state="0">0</button>
+                    <span class="switch-status-text" id="arith-switch-a-lbl">LOW (0)</span>
+                </div>
+
+                <div class="switch-control-item">
+                    <span class="switch-dock-label">Input B</span>
+                    <button type="button" class="binary-switch off" id="arith-switch-b" data-state="0">0</button>
+                    <span class="switch-status-text" id="arith-switch-b-lbl">LOW (0)</span>
+                </div>
+
+                <div class="switch-control-item" id="switch-cin-container" style="display: none;">
+                    <span class="switch-dock-label" id="switch-cin-label">Carry In (Cin)</span>
+                    <button type="button" class="binary-switch off" id="arith-switch-cin" data-state="0">0</button>
+                    <span class="switch-status-text" id="arith-switch-cin-lbl">LOW (0)</span>
+                </div>
+
+                <!-- Distinct LED Outputs -->
+                <div class="output-led-dock">
+                    <span class="switch-dock-label" id="led-1-label">SUM</span>
+                    <div class="led-indicator led-sum led-off" id="arith-led-1">
+                        <span class="led-core"></span>
+                    </div>
+                    <span class="output-status-bold" id="arith-out-1-val">0</span>
+                </div>
+
+                <div class="output-led-dock">
+                    <span class="switch-dock-label" id="led-2-label">CARRY</span>
+                    <div class="led-indicator led-carry led-off" id="arith-led-2">
+                        <span class="led-core"></span>
+                    </div>
+                    <span class="output-status-bold" id="arith-out-2-val">0</span>
+                </div>
+            </div>
+
+            <!-- Plain-English Arithmetic Explanation Card -->
+            <div class="logic-explanation-card mt-3">
+                <div class="explanation-icon-wrap">
+                    <i data-feather="cpu"></i>
+                </div>
+                <div class="explanation-content-wrap">
+                    <span class="explanation-title">Arithmetic Logic Analysis:</span>
+                    <p class="explanation-body" id="arith-plain-explanation">
+                        Adding A=0 and B=0: Total sum = 0 + 0 = 0₁₀ = 00₂. XOR produces Sum = 0; AND produces Carry = 0.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Truth Table & Practical Engineering Section -->
+        <div class="panel-card truth-table-panel">
+            <div class="panel-header">
+                <h3 class="panel-title"><i data-feather="table" class="panel-icon"></i> Truth Table</h3>
+                <span class="badge badge-emerald" id="arith-table-badge">Active Row Synced</span>
+            </div>
+
+            <p class="panel-intro-text">Live synchronized truth table with intermediate and final output states:</p>
+
+            <div class="table-responsive">
+                <table class="lab-table truth-table" id="arith-truth-table">
+                    <thead id="arith-table-head">
+                        <!-- Populated by JS -->
+                    </thead>
+                    <tbody id="arith-table-body">
+                        <!-- Rows injected dynamically -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Practical Applications Card -->
+            <div class="gate-info-accordion mt-4">
+                <div class="gate-info-heading">
+                    <i data-feather="hard-drive"></i>
+                    <span>Practical Applications in Modern Hardware</span>
+                </div>
+                <div class="gate-info-text" id="arith-app-desc">
+                    In modern microprocessors, Half Adders and Full Adders form the bedrock of the <strong>Arithmetic Logic Unit (ALU)</strong>. Multiple 1-bit full adders are cascaded to form 32-bit and 64-bit Ripple Carry Adders (RCA), Carry-Lookahead Adders (CLA), and digital multipliers that execute billions of calculations per second.
+                </div>
+            </div>
+
+            <!-- Preset Input Buttons -->
+            <div class="preset-inputs-strip mt-3">
+                <span class="preset-strip-label">Test Input Combinations:</span>
+                <div class="presets-row-wrap" id="arith-presets-container">
+                    <!-- Injected by JS based on circuit inputs -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Side-by-Side 4-Circuit Compare View (Toggleable) -->
+    <div class="compare-mode-container" id="arith-compare-container" style="display: none;">
+        <div class="panel-card">
+            <div class="panel-header">
+                <div>
+                    <span class="chip-badge chip-emerald">Multi-Circuit Comparison</span>
+                    <h3 class="panel-title-lg">Compare All 4 Arithmetic Circuits Side-by-Side</h3>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="btn-close-arith-compare">
+                    <i data-feather="x"></i> Back to Single Circuit
+                </button>
+            </div>
+            <p class="panel-intro-text">Observe how Adders vs Subtractors handle identical binary inputs A, B, and Carry/Borrow-in:</p>
+
+            <!-- Shared Switches for Arithmetic Compare -->
+            <div class="compare-switches-bar">
+                <div class="compare-switch-item">
+                    <span class="switch-tag">Shared Input A</span>
+                    <button class="binary-switch off" id="comp-arith-a" data-state="0">0</button>
+                </div>
+                <div class="compare-switch-item">
+                    <span class="switch-tag">Shared Input B</span>
+                    <button class="binary-switch off" id="comp-arith-b" data-state="0">0</button>
+                </div>
+                <div class="compare-switch-item">
+                    <span class="switch-tag">Shared In (Cin / Bin)</span>
+                    <button class="binary-switch off" id="comp-arith-cin" data-state="0">0</button>
+                </div>
+            </div>
+
+            <!-- 4 Comparative Circuit Cards -->
+            <div class="arith-compare-grid" id="arith-compare-cards">
+                <!-- Half Adder Card -->
+                <div class="arith-comp-card">
+                    <div class="comp-card-header">
+                        <span class="badge badge-cyan">Addition</span>
+                        <h4>Half Adder</h4>
+                    </div>
+                    <div class="comp-formula-box">Sum = A ⊕ B | Carry = A · B</div>
+                    <div class="comp-leds-row">
+                        <div class="comp-led-unit">
+                            <span class="comp-led-name">Sum</span>
+                            <div class="led-indicator led-sum led-off" id="comp-ha-sum-led"><span class="led-core"></span></div>
+                            <span class="comp-digit" id="comp-ha-sum-val">0</span>
+                        </div>
+                        <div class="comp-led-unit">
+                            <span class="comp-led-name">Carry</span>
+                            <div class="led-indicator led-carry led-off" id="comp-ha-carry-led"><span class="led-core"></span></div>
+                            <span class="comp-digit" id="comp-ha-carry-val">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Full Adder Card -->
+                <div class="arith-comp-card">
+                    <div class="comp-card-header">
+                        <span class="badge badge-cyan">Addition</span>
+                        <h4>Full Adder</h4>
+                    </div>
+                    <div class="comp-formula-box">Sum = A ⊕ B ⊕ Cin | Cout = AB + Cin(A⊕B)</div>
+                    <div class="comp-leds-row">
+                        <div class="comp-led-unit">
+                            <span class="comp-led-name">Sum</span>
+                            <div class="led-indicator led-sum led-off" id="comp-fa-sum-led"><span class="led-core"></span></div>
+                            <span class="comp-digit" id="comp-fa-sum-val">0</span>
+                        </div>
+                        <div class="comp-led-unit">
+                            <span class="comp-led-name">Cout</span>
+                            <div class="led-indicator led-carry led-off" id="comp-fa-cout-led"><span class="led-core"></span></div>
+                            <span class="comp-digit" id="comp-fa-cout-val">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Half Subtractor Card -->
+                <div class="arith-comp-card">
+                    <div class="comp-card-header">
+                        <span class="badge badge-violet">Subtraction</span>
+                        <h4>Half Subtractor</h4>
+                    </div>
+                    <div class="comp-formula-box">Diff = A ⊕ B | Borrow = Ā · B</div>
+                    <div class="comp-leds-row">
+                        <div class="comp-led-unit">
+                            <span class="comp-led-name">Diff</span>
+                            <div class="led-indicator led-diff led-off" id="comp-hs-diff-led"><span class="led-core"></span></div>
+                            <span class="comp-digit" id="comp-hs-diff-val">0</span>
+                        </div>
+                        <div class="comp-led-unit">
+                            <span class="comp-led-name">Borrow</span>
+                            <div class="led-indicator led-borrow led-off" id="comp-hs-borrow-led"><span class="led-core"></span></div>
+                            <span class="comp-digit" id="comp-hs-borrow-val">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Full Subtractor Card -->
+                <div class="arith-comp-card">
+                    <div class="comp-card-header">
+                        <span class="badge badge-violet">Subtraction</span>
+                        <h4>Full Subtractor</h4>
+                    </div>
+                    <div class="comp-formula-box">Diff = A ⊕ B ⊕ Bin | Bout = ĀB + Bin¬(A⊕B)</div>
+                    <div class="comp-leds-row">
+                        <div class="comp-led-unit">
+                            <span class="comp-led-name">Diff</span>
+                            <div class="led-indicator led-diff led-off" id="comp-fs-diff-led"><span class="led-core"></span></div>
+                            <span class="comp-digit" id="comp-fs-diff-val">0</span>
+                        </div>
+                        <div class="comp-led-unit">
+                            <span class="comp-led-name">Bout</span>
+                            <div class="led-indicator led-borrow led-off" id="comp-fs-bout-led"><span class="led-core"></span></div>
+                            <span class="comp-digit" id="comp-fs-bout-val">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/circuits.js') }}"></script>
+<script src="{{ url_for('static', filename='js/arithmetic.js') }}"></script>
+{% endblock %}

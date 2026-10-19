@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container lab-container">
+    <!-- Header Breadcrumb & Title -->
+    <div class="lab-header">
+        <div class="lab-title-group">
+            <div class="lab-icon-badge icon-cyan">
+                <i data-feather="hash"></i>
+            </div>
+            <div>
+                <span class="chip-badge chip-cyan">Laboratory 1</span>
+                <h1 class="lab-main-heading">Number System Converter</h1>
+                <p class="lab-sub-heading">Real-time cross-base conversion across Binary, Octal, Decimal, and Hexadecimal with complete mathematical step breakdowns.</p>
+            </div>
+        </div>
+        <div class="lab-header-actions">
+            <button class="btn btn-secondary btn-sm" id="btn-examples-toggle">
+                <i data-feather="bookmark"></i> Preset Examples
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btn-history-toggle">
+                <i data-feather="clock"></i> History (<span id="history-count">0</span>)
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Example Presets Drawer -->
+    <div class="presets-panel" id="presets-panel" style="display: none;">
+        <span class="presets-title">One-Click Educational Examples:</span>
+        <div class="presets-buttons">
+            <button class="preset-btn" data-val="42" data-src="10" data-tgt="2">42₁₀ → Binary</button>
+            <button class="preset-btn" data-val="255" data-src="10" data-tgt="16">255₁₀ → Hex</button>
+            <button class="preset-btn" data-val="125.625" data-src="10" data-tgt="2">125.625₁₀ → Binary (Fraction)</button>
+            <button class="preset-btn" data-val="1010.101" data-src="2" data-tgt="10">1010.101₂ → Decimal</button>
+            <button class="preset-btn" data-val="11010111" data-src="2" data-tgt="16">11010111₂ → Hex (4-bit group)</button>
+            <button class="preset-btn" data-val="110101" data-src="2" data-tgt="8">110101₂ → Octal (3-bit group)</button>
+            <button class="preset-btn" data-val="2F.C" data-src="16" data-tgt="10">2F.C₁₆ → Decimal</button>
+            <button class="preset-btn" data-val="75.4" data-src="8" data-tgt="16">75.4₈ → Hex (Bridge via Bin)</button>
+            <button class="preset-btn" data-val="-19.75" data-src="10" data-tgt="2">-19.75₁₀ → Signed Binary</button>
+        </div>
+    </div>
+
+    <!-- Main Converter Workbench Grid -->
+    <div class="workbench-grid">
+        <!-- Left: Converter Controls & Inputs -->
+        <div class="panel-card converter-control-panel">
+            <div class="panel-header">
+                <h3 class="panel-title"><i data-feather="sliders" class="panel-icon"></i> Conversion Settings</h3>
+                <span class="badge badge-emerald" id="realtime-status-badge">Live Ready</span>
+            </div>
+
+            <!-- Base Selectors with Swap Button -->
+            <div class="base-selector-row">
+                <div class="base-select-col">
+                    <label for="source-base-select" class="form-label">Source Base</label>
+                    <select id="source-base-select" class="lab-select">
+                        <option value="2">Binary (Base 2)</option>
+                        <option value="8">Octal (Base 8)</option>
+                        <option value="10" selected>Decimal (Base 10)</option>
+                        <option value="16">Hexadecimal (Base 16)</option>
+                    </select>
+                </div>
+
+                <div class="swap-btn-wrap">
+                    <button type="button" class="icon-btn swap-btn" id="btn-swap-bases" title="Swap Source and Target Bases" aria-label="Swap bases">
+                        <i data-feather="repeat"></i>
+                    </button>
+                </div>
+
+                <div class="base-select-col">
+                    <label for="target-base-select" class="form-label">Target Base</label>
+                    <select id="target-base-select" class="lab-select">
+                        <option value="2" selected>Binary (Base 2)</option>
+                        <option value="8">Octal (Base 8)</option>
+                        <option value="10">Decimal (Base 10)</option>
+                        <option value="16">Hexadecimal (Base 16)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Precision Controls -->
+            <div class="precision-row">
+                <div class="precision-label-wrap">
+                    <label for="fractional-precision" class="form-label">Fractional Precision: <span id="precision-display-val">4</span> places</label>
+                    <span class="precision-hint">Controls decimal/fraction expansion depth</span>
+                </div>
+                <input type="range" id="fractional-precision" min="1" max="10" value="4" class="lab-range">
+            </div>
+
+            <!-- Number Input Field with Real-Time Validation -->
+            <div class="input-form-group">
+                <div class="input-header-row">
+                    <label for="number-input-field" class="form-label">Input Value</label>
+                    <span class="input-char-hint" id="allowed-chars-hint">Allowed: 0-9, decimal point, optional '-'</span>
+                </div>
+                <div class="input-wrapper">
+                    <input type="text" id="number-input-field" class="lab-text-input mono-font" placeholder="Enter number (e.g. 125.625)" value="125.625" autocomplete="off" spellcheck="false">
+                    <button type="button" class="input-clear-btn" id="btn-clear-input" title="Clear Input" aria-label="Clear">&times;</button>
+                </div>
+                <div class="validation-feedback" id="input-error-msg" style="display: none;"></div>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="control-actions-row">
+                <button type="button" class="btn btn-primary btn-block" id="btn-convert-action">
+                    <i data-feather="play"></i> Convert Now
+                </button>
+                <button type="button" class="btn btn-secondary" id="btn-reset-converter" title="Reset all fields">
+                    <i data-feather="refresh-cw"></i> Reset
+                </button>
+            </div>
+
+            <!-- Primary Result Display Box -->
+            <div class="result-display-box" id="result-display-card">
+                <div class="result-box-header">
+                    <span class="result-box-label" id="result-box-label">Target Result (Binary):</span>
+                    <button type="button" class="btn-copy-sm" id="btn-copy-result" title="Copy Result to Clipboard">
+                        <i data-feather="copy"></i> Copy
+                    </button>
+                </div>
+                <div class="result-value-display mono-font" id="primary-result-val">1111101.101</div>
+                <div class="result-sub-info" id="primary-result-meta">Method: Repeated Division & Multiplication</div>
+            </div>
+        </div>
+
+        <!-- Right: 4-Base Live Comparison Panel -->
+        <div class="panel-card multi-base-panel">
+            <div class="panel-header">
+                <h3 class="panel-title"><i data-feather="grid" class="panel-icon"></i> Simultaneous 4-Base Comparison</h3>
+                <span class="badge badge-cyan">Synced</span>
+            </div>
+            <p class="panel-intro-text">Observing the exact same physical value across all four foundational computing numbering systems:</p>
+
+            <div class="multi-base-cards-grid">
+                <!-- Binary -->
+                <div class="base-comparison-card" id="card-base-2">
+                    <div class="base-card-top">
+                        <span class="base-name-tag">Binary (Base 2)</span>
+                        <button type="button" class="btn-copy-icon" data-copy-target="comp-val-2" title="Copy Binary"><i data-feather="copy"></i></button>
+                    </div>
+                    <div class="base-card-value mono-font" id="comp-val-2">1111101.101</div>
+                    <span class="base-card-note">Radix 2 • Digits {0, 1}</span>
+                </div>
+
+                <!-- Octal -->
+                <div class="base-comparison-card" id="card-base-8">
+                    <div class="base-card-top">
+                        <span class="base-name-tag">Octal (Base 8)</span>
+                        <button type="button" class="btn-copy-icon" data-copy-target="comp-val-8" title="Copy Octal"><i data-feather="copy"></i></button>
+                    </div>
+                    <div class="base-card-value mono-font" id="comp-val-8">175.5</div>
+                    <span class="base-card-note">Radix 8 • Digits {0–7}</span>
+                </div>
+
+                <!-- Decimal -->
+                <div class="base-comparison-card" id="card-base-10">
+                    <div class="base-card-top">
+                        <span class="base-name-tag">Decimal (Base 10)</span>
+                        <button type="button" class="btn-copy-icon" data-copy-target="comp-val-10" title="Copy Decimal"><i data-feather="copy"></i></button>
+                    </div>
+                    <div class="base-card-value mono-font" id="comp-val-10">125.625</div>
+                    <span class="base-card-note">Radix 10 • Digits {0–9}</span>
+                </div>
+
+                <!-- Hexadecimal -->
+                <div class="base-comparison-card" id="card-base-16">
+                    <div class="base-card-top">
+                        <span class="base-name-tag">Hexadecimal (Base 16)</span>
+                        <button type="button" class="btn-copy-icon" data-copy-target="comp-val-16" title="Copy Hexadecimal"><i data-feather="copy"></i></button>
+                    </div>
+                    <div class="base-card-value mono-font" id="comp-val-16">7D.A</div>
+                    <span class="base-card-note">Radix 16 • Digits {0–9, A–F}</span>
+                </div>
+            </div>
+
+            <!-- Radix Quick Comparison Guide -->
+            <div class="radix-guide-box mt-3">
+                <span class="guide-title"><i data-feather="info"></i> Positional Base Principle:</span>
+                <p class="guide-desc">Higher radix bases represent large numbers more compactly. Each hexadecimal digit encapsulates exactly 4 binary bits, while each octal digit encapsulates exactly 3 bits.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step-by-Step Mathematical Explanation Section -->
+    <section class="explanation-section" id="conversion-steps-section">
+        <div class="panel-card">
+            <div class="panel-header">
+                <div>
+                    <span class="chip-badge chip-violet">Detailed Mathematical Process</span>
+                    <h3 class="panel-title-lg">How This Conversion Works Step-by-Step</h3>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="btn-toggle-steps-detail">
+                    <i data-feather="eye"></i> Toggle Detailed View
+                </button>
+            </div>
+
+            <!-- Plain English Summary -->
+            <div class="explanation-summary-box" id="explanation-summary-box">
+                <i data-feather="check-circle" class="summary-check-icon"></i>
+                <div id="explanation-summary-text">
+                    Converting Decimal 125.625₁₀ to Binary (Base 2): Integer part 125 is divided by 2 repeatedly yielding 1111101. Fractional part 0.625 is multiplied by 2 yielding .101.
+                </div>
+            </div>
+
+            <!-- Step Breakdown Containers (Dynamically Injected by JavaScript) -->
+            <div class="steps-flow-container" id="steps-flow-container">
+                <!-- Dynamically filled with division tables, multiplication tables, or grouping schemes -->
+            </div>
+        </div>
+    </section>
+
+    <!-- History Modal / Slide-out Drawer -->
+    <div class="modal-overlay" id="history-modal" aria-hidden="true" role="dialog">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-heading"><i data-feather="clock"></i> Conversion History</h3>
+                <button class="modal-close-icon" id="history-modal-close" aria-label="Close history">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="history-list" id="history-items-list">
+                    <div class="text-muted text-center py-4">No recent conversions recorded yet.</div>
+                </div>
+            </div>
+            <div class="modal-footer row-flex-between">
+                <button class="btn btn-outline btn-sm text-danger" id="btn-clear-history">
+                    <i data-feather="trash-2"></i> Clear History
+                </button>
+                <button class="btn btn-secondary btn-sm" id="btn-close-history-modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/converter.js') }}"></script>
+{% endblock %}
